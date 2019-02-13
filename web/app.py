@@ -1,6 +1,7 @@
 # coding: utf-8
 
 from flask import Flask
+from werkzeug.utils import find_modules
 
 from web import config
 
