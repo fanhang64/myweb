@@ -4,6 +4,7 @@ import datetime
 import traceback
 import logging 
 import sys
+import json
 from logging.handlers import RotatingFileHandler
 
 from flask import Flask, jsonify, request
@@ -73,7 +74,7 @@ def register_after_request(app):
     def log_response(resp):
         log_msg = {
             'url': request.path,
-            'args': request.args,
+            'args': json.dumps(request.args),
             'req_time': datetime.datetime.now().isoformat(),
         }
         try:
@@ -92,12 +93,12 @@ def register_after_request(app):
 
 
 def register_err_handler(app):
-    @app.error_handlers(Exception)
+    @app.errorhandler(Exception)
     def handler_exception(err):
         print(traceback.format_exc())
         logger.error(traceback.format_exc())
-        return jsonify(code=-1, msg='server iternal err')
+        return jsonify(code=-1, msg='', error='server iternal err')
 
     @app.errorhandler(404)
     def handle_404(err):
-        return jsonify(code=-2, msg='api not found')
+        return jsonify(code=-2, mgs='', error='api not found')

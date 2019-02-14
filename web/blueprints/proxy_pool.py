@@ -40,18 +40,18 @@ def get_user_ip():
     return ip
 
 
-@bp.route("/IPProxy")
+@bp.route("/")
 def index():
     return "<h1>Welcome to My Proxy Pool System</h1>"
 
 
-@bp.route("/IPProxy/get")
+@bp.route("/get")
 def get_ip():
     ip = _get_ip()
     return ip
 
 
-@bp.route("/IPProxy/count")
+@bp.route("/count")
 def get_ip_count():
     conn = _get_conn()
     return str(conn.zcard(REDIS_KEY))
