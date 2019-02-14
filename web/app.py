@@ -37,9 +37,7 @@ def register_blueprints(app, path):
         except ImportError:
             raise
         else:
-            res = sys.modules[import_name]
-            print("import modules", res)
-            return res
+            return sys.modules[import_name]
 
     for name in find_modules(path):
         mod = _import_string(name)
@@ -47,7 +45,6 @@ def register_blueprints(app, path):
             continue
         urls = name.split('.')
         prefix = '/{}'.format(urls[-1])
-        print("prefix:", prefix)
         app.register_blueprint(mod.bp, url_prefix=prefix)
 
 
