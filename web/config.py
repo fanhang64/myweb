@@ -1,7 +1,7 @@
 
 class Config:
     DEBUG = False
-    LOG_PATH = '/root/code/pro/myflask/logs'
+    LOG_PATH = '/root/code/pro/myflask/logs/all.logs'
 
     # redis
     REDIS_URL = 'redis://:123@127.0.0.1:6379'
