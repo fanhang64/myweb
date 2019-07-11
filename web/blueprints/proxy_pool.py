@@ -5,7 +5,7 @@ from flask import Blueprint, g, request
 
 from web.core import get_redis_db
 
-bp = Blueprint("proxypool", __name__)
+bp = Blueprint("proxypool", __name__, url_prefix='/proxypool')
 
 
 REDIS_KEY = 'proxies'

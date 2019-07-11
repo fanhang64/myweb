@@ -1,5 +1,7 @@
 import redis
 
+from flask_sqlalchemy import SQLAlchemy
+
 from web.config import Config
 
 
@@ -15,3 +17,6 @@ def get_redis_db():
         _redis_db = r
 
     return _redis_db
+
+
+db = SQLAlchemy()
