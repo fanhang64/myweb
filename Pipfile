@@ -9,6 +9,7 @@ verify_ssl = true
 flask = "*"
 toml = "*"
 redis = "*"
+flask-sqlalchemy = "*"
 
 [requires]
 python_version = "3.6"
