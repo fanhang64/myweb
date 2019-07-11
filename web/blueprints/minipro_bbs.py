@@ -12,13 +12,19 @@ bp = Blueprint('minipro', __name__, url_prefix='/minipro')
 
 class PostView(MethodView):
     def get(self, post_id):
+        res = []
         if post_id:
             post = Post.query.filter_by(id=post_id).first()
             res =  post.to_dict()
+            res['images'] = post.get_images()
             return res 
 
         posts = Post.query.all()
-        res = [post.to_dict() for post in posts]
+        for post in posts:
+            images = post.get_images()
+            r = post.to_dict()
+            r['images'] = images
+            res.append(r)
         return res
     
     def post(self):

@@ -37,6 +37,9 @@ class Post(db.Model):
         keys = [x.name for x in self.__table__.columns]
         data = {key: getattr(self, key) for key in keys}
         return data
+    
+    def get_images(self):
+        return [x.image_url for x in self.images]
 
 
 class PostImage(db.Model):
