@@ -13,7 +13,7 @@ from werkzeug.utils import find_modules
 from .config import Config
 from .core import db
 from .utils import JsonResponse
-from .exceptions import BaseException, FormValidationError
+from .exceptions import CustomBaseException, FormValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +80,7 @@ def register_after_request(app):
 
 
 def register_err_handler(app):
-    @app.errorhandler(BaseException)
+    @app.errorhandler(CustomBaseException)
     def handler_exception(err):
         return jsonify(errcode=err.errcode, errmsg=err.errmsg, **err.kw)
     

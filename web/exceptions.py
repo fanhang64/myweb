@@ -1,4 +1,4 @@
-class BaseException(Exception):
+class CustomBaseException(Exception):
     errcode = 1000
     errmsg = 'Server Unkown Error.'
 
@@ -16,7 +16,7 @@ class BaseException(Exception):
         return '<%s \'%s\'>' % (self.__class__.__name__, self)
 
 
-class FormValidationError(BaseException):
+class FormValidationError(CustomBaseException):
     errcode = 2001
     errmsg = '表单验证错误'
 
@@ -28,6 +28,6 @@ class FormValidationError(BaseException):
         self.errors = form.errors
 
 
-class ParameterError(BaseException):
+class ParameterError(CustomBaseException):
     errcode = -1
     errmsg = '参数错误'
