@@ -23,7 +23,7 @@ class Post(db.Model):
     __tablename__ = 'post'
 
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.VARCHAR(64), nullable=False)
+    title = db.Column(db.VARCHAR(64), nullable=True, comment='标题')
     content = db.Column(db.TEXT, comment='内容')
     status = db.Column(TINYINT(2), default=0)
     created_at = db.Column(db.DateTime, default=datetime.now())

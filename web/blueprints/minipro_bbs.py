@@ -1,29 +1,57 @@
+import json
+
 from flask import Blueprint, request
 from flask.views import MethodView
 
 from web.core import db
 from web.models.minipro_bbs import Post, PostImage
 from web.forms.minipro_bbs import PostForm
-from web.exceptions import BaseException, FormValidationError, ParameterError
+from web.exceptions import CustomBaseException, FormValidationError, ParameterError
 
 
 bp = Blueprint('minipro', __name__, url_prefix='/minipro')
 
 
+@bp.route("/users", methods=['GET', 'POST'])
+def users():
+    pass
+
+ 
 class PostView(MethodView):
     def get(self, post_id):
+        limit = request.args.get('limit')
         res = []
         if post_id:
             post = Post.query.filter_by(id=post_id).first()
-            res =  post.to_dict()
-            res['images'] = post.get_images()
-            return res 
+            resp = post.to_dict()
+            resp['images'] = post.get_images()
+            user = post.user
+            print(user.nickname, user.avatar)
+            resp['author'] = {
+                'nickname': user.nickname,
+                'avatar': user.avatar
+            }
+            location = post.location
+            resp['location'] = json.loads(location) if location else None
+            resp['styled'] = [{'tag': '', 'text': '内容1111111'}]  #  例如： #bug反馈#  content: bug反馈
+            return resp
 
-        posts = Post.query.all()
+        query = Post.query.order_by(Post.id.desc())
+        if limit:
+            query = query.limit(limit)
+        posts = query.all()
         for post in posts:
             images = post.get_images()
             r = post.to_dict()
             r['images'] = images
+            user = post.user
+            r['author'] = {
+                'nickname': user.nickname,
+                'avatar': user.avatar
+            }
+            location = post.location
+            r['location'] = json.loads(location) if location else None
+            r['styled'] = [{'tag': '', 'text': '内容1111111'}]
             res.append(r)
         return res
     
@@ -35,13 +63,14 @@ class PostView(MethodView):
             post_obj.title = req_data.get('title')
             post_obj.content = req_data.get('content')
             post_obj.user_id = req_data.get('author_id')
+            post_obj.location = req_data.get('location')
             db.session.add(post_obj)
             db.session.flush()
-            images = req_data.get('images', [])
-            
-            for img in images:
-                img_url = img.get('image_url')
-                post_image = PostImage(image_ur=img_url, post_id=post_obj.id)
+            media = req_data.get('media', {})
+
+            images = media.get('path', [])
+            for img_url in images:
+                post_image = PostImage(image_url=img_url, post_id=post_obj.id)
                 db.session.add(post_image)
             db.session.commit()
             return {}
