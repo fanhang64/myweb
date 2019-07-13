@@ -31,3 +31,8 @@ class FormValidationError(CustomBaseException):
 class ParameterError(CustomBaseException):
     errcode = -1
     errmsg = '参数错误'
+
+
+class TokenExpireErr(CustomBaseException):
+    errcode = -2
+    errmsg = '生成token失败' 

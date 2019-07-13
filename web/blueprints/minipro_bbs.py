@@ -1,15 +1,66 @@
 import json
+from urllib.parse import urlencode, urljoin
 
+import requests
 from flask import Blueprint, request
 from flask.views import MethodView
 
+from web.config import Config
 from web.core import db
-from web.models.minipro_bbs import Post, PostImage, PostTopic
+from web.models.minipro_bbs import Post, PostImage, PostTopic, User
 from web.forms.minipro_bbs import PostForm
 from web.exceptions import CustomBaseException, FormValidationError, ParameterError
+from web.utils import jwt_
 
 
 bp = Blueprint('minipro', __name__, url_prefix='/minipro')
+
+
+@bp.route("/auth", methods=['POST'])
+def auth():
+    req_data = request.json
+    code = req_data.get('code', "081QsvNn1PrBNp0okiQn1ellNn1QsvN7")
+    if not code:
+        return
+    data = {
+        'appid': Config.AppId,
+        'secret': Config.AppSecret,
+        'js_code': code,
+        'grant_type': 'authorization_code'
+    }
+
+    url = 'https://api.weixin.qq.com/sns/jscode2session?'
+    req_url = url + urlencode(data)
+    try:
+        res = requests.get(req_url).json()
+        print(res)
+        return res
+    except:
+        raise CustomBaseException
+    return {}
+
+
+@bp.route("/wx_login", methods=['POST'])
+def wx_login():
+    req_data = request.json
+    openid = req_data.get('openid')
+    if not openid:
+        raise ParameterError('缺少参数openid')
+    nickname = req_data.get('nickname')
+    avatar_url = req_data.get('avatar_url')
+    user = User()
+    user.open_id = open_id
+    user.phone = phone
+    user.nickname = nickname
+    user.avatar = avatar_url
+    db.session.add(user)
+    try:
+        db.session.commit()
+    except:
+        db.session.rollback()
+        return {'code': -1, 'msg': '生成token失败'}
+    token = jwt_.encode(user.id, openid).decode()
+    return {'token': token}
 
 
 @bp.route("/users", methods=['GET', 'POST'])

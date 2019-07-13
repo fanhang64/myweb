@@ -9,6 +9,7 @@ class User(db.Model):
     __tablename__ = 'user'
 
     id = db.Column(db.Integer, primary_key=True)
+    open_id = db.Column(db.VARCHAR(64), nullable=False)
     phone = db.Column(db.VARCHAR(11), nullable=False)
     nickname = db.Column(db.VARCHAR(32), nullable=False)
     avatar = db.Column(db.VARCHAR(256), default='', comment='头像')
