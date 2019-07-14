@@ -48,19 +48,23 @@ def wx_login():
         raise ParameterError('缺少参数openid')
     nickname = req_data.get('nickname')
     avatar_url = req_data.get('avatar_url')
-    user = User()
-    user.open_id = open_id
-    user.phone = phone
-    user.nickname = nickname
-    user.avatar = avatar_url
-    db.session.add(user)
-    try:
-        db.session.commit()
-    except:
-        db.session.rollback()
-        return {'code': -1, 'msg': '生成token失败'}
+    phone = req_data.get('phone')
+
+    user = User.query.filter_by(open_id=openid).first()
+    if not user:
+        user = User()
+        user.open_id = openid
+        user.phone = phone
+        user.nickname = nickname
+        user.avatar = avatar_url
+        db.session.add(user)
+        try:
+            db.session.commit()
+        except:
+            db.session.rollback()
+            return {'code': -1, 'msg': '生成token失败'}
     token = jwt_.encode(user.id, openid).decode()
-    return {'token': token}
+    return {'token': token, 'user_id': user.id}
 
 
 @bp.route("/users", methods=['GET', 'POST'])
