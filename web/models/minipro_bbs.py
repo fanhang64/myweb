@@ -56,6 +56,11 @@ class Post(db.Model):
     def get_images(self):
         return [x.image_url for x in self.images]
 
+    def get_favors_count(self):
+        return PostFavor.query.filter_by(post_id=self.id).count()
+
+    def get_comments(self):
+        return 0
 
 class PostImage(db.Model):
     __tablename__ = 'post_images'
@@ -67,3 +72,36 @@ class PostImage(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.now(), onupdate=datetime.now())
 
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
+
+
+class PostFavor(db.Model):
+    __tablename__ = 'post_favor'
+
+    id = db.Column(db.Integer, primary_key=True)
+    from_user_id = db.Column(db.Integer, nullable=False, comment='点赞人id')
+    from_user_name = db.Column(db.VARCHAR(32), nullable=False)
+    to_user_id = db.Column(db.Integer, nullable=False, comment='被点赞人id')
+    post_id = db.Column(db.Integer, nullable=False)
+    status = db.Column(TINYINT(2), default=0)
+    created_at = db.Column(db.DateTime, default=datetime.now())
+    updated_at = db.Column(db.DateTime, default=datetime.now(), onupdate=datetime.now())
+
+    def to_dict(self):
+        keys = [x.name for x in self.__table__.columns]
+        data = {key: getattr(self, key) for key in keys}
+        return data
+    
+    @classmethod
+    def get_favors(self, user_id):
+        res = []
+        favors = self.query.filter_by(to_user_id=user_id)
+        for x in favors:
+            post = Post.query.get(pk=x.post_id)
+            d = {
+                'user_id': x.from_user_id,
+                'user_name': x.from_user_name,
+                'created_at': x.created_at,
+                'content': post.content
+            }
+            res.append(d)
+        return res

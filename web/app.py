@@ -34,6 +34,7 @@ def create_app():
 
     init_log(app)
     register_blueprints(app, 'web.blueprints')
+    register_before_request(app)
     register_after_request(app)
     register_err_handler(app)
     register_extensions(app)
@@ -73,6 +74,13 @@ def init_log(app):
     )
 
     logging.getLogger('myflask').setLevel(logging.WARNING)
+
+
+def register_before_request(app):
+    @app.before_request
+    def aaa():
+        aa = request.headers
+        print(aa)
 
 
 def register_after_request(app):

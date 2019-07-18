@@ -7,8 +7,9 @@ from flask.views import MethodView
 
 from web.config import Config
 from web.core import db
-from web.models.minipro_bbs import Post, PostImage, PostTopic, User
-from web.forms.minipro_bbs import PostForm
+from web.models.minipro_bbs import Post, PostImage,\
+     PostTopic, User, PostFavor
+from web.forms.minipro_bbs import PostForm, PostFavorForm
 from web.exceptions import CustomBaseException, FormValidationError, ParameterError
 from web.utils import jwt_
 
@@ -19,7 +20,7 @@ bp = Blueprint('minipro', __name__, url_prefix='/minipro')
 @bp.route("/auth", methods=['POST'])
 def auth():
     req_data = request.json
-    code = req_data.get('code', "081QsvNn1PrBNp0okiQn1ellNn1QsvN7")
+    code = req_data.get('code')
     if not code:
         return
     data = {
@@ -83,7 +84,90 @@ def topic():
         })
     return res
 
- 
+@bp.route("/user/<int:uid>/posts")
+def user_post(uid):
+    if not uid:
+        raise ParameterError
+    res = []
+    favor = request.args.get('favor')
+    comment = request.args.get('comment')
+    limit = request.args.get('limit')
+    since_post_id = request.args.get('since_id', type=int)
+    if favor:
+        post_favor = PostFavor.query\
+            .filter(PostFavor.from_user_id == uid).with_entities(PostFavor.post_id)
+        post_ids = [x[0] for x in post_favor]
+        query = Post.query.filter(Post.id.in_(post_ids))
+    elif comment:
+        pass
+    else:
+        query = Post.query.filter(Post.user_id == uid).order_by(Post.id.desc())
+    if since_post_id and since_post_id > 0:
+        query = query.filter(Post.id < since_post_id)
+    if limit:
+        query = query.limit(limit)
+    posts = query.all()
+    for post in posts:
+        images = post.get_images()
+        r = post.to_dict()
+        r['images'] = images
+        user = post.user
+        r['author'] = {
+            'nickname': user.nickname,
+            'avatar': user.avatar
+        }
+        location = post.location
+        r['location'] = json.loads(location) if location else None
+        r['styled'] = [{'tag': True, 'text': post.content}]
+        favors = post.get_favors_count()
+        comments = post.get_comments_count()
+        stats = {'favored': False, 'favors': favors, 'comments': comments}
+        r['stats'] = stats
+        res.append(r)
+    return res
+
+
+class PostFavorView(MethodView):
+    def get(self):
+        post_id = request.args.get('post_id')
+        user_id = request.args.get('user_id')
+        if post_id:
+            pass
+        if user_id:
+            post_favor_list = PostFavor.query\
+                .filter_by(from_user_id=user_id).with_entities(PostFavor.post_id)
+            post_id_list = [x[0] for x in post_favor_list]   
+            return post_id_list
+        raise ParameterError
+
+    def post(self):
+        req_data = request.json
+        form = PostFavorForm(data=req_data)
+        if form.validate():
+            post_favor = PostFavor()
+            from_user_id = req_data.get('from_user_id')
+            post_favor.from_user_id = from_user_id
+            user = User.query.filter_by(id=from_user_id).first()
+            post_favor.from_user_name = user.nickname
+            post_favor.to_user_id = req_data.get('to_user_id')
+            post_favor.post_id = req_data.get('post_id')
+            db.session.add(post_favor)
+            db.session.commit()
+            return {}
+        raise FormValidationError(form)
+    
+    def delete(self, post_id):
+        user_id = request.args.get('user_id')  # 点赞人
+        if post_id and user_id:
+            post_favor = PostFavor.query.filter_by(post_id=post_id,\
+                from_user_id=user_id).first()
+            if post_favor:
+                db.session.delete(post_favor)
+                db.session.commit()
+            return {}
+        raise ParameterError
+
+
 class PostView(MethodView):
     def get(self, post_id):
         limit = request.args.get('limit')
@@ -94,15 +178,14 @@ class PostView(MethodView):
         res = []
         query = Post.query.order_by(Post.id.desc())
         if post_id:
-            post = query.filter_by(id=post_id)
-
+            query = query.filter_by(id=post_id)
         if filter_args == 'val':
             query = query.filter_by(status=2)
         elif filter_args == 'top':
             query = query.filter_by(status=3)
         if topic_id:
             query = query.filter(Post.topic_id == topic_id)
-        if since_post_id > 0:
+        if since_post_id and since_post_id > 0:
             query = query.filter(Post.id < since_post_id)
         if limit:
             query = query.limit(limit)
@@ -120,6 +203,10 @@ class PostView(MethodView):
             location = post.location
             r['location'] = json.loads(location) if location else None
             r['styled'] = [{'tag': True, 'text': post.content}]
+            favors = post.get_favors_count()
+            comments = post.get_comments_count()
+            stats = {'favored': False, 'favors': favors, 'comments': comments}
+            r['stats'] = stats
             res.append(r)
         return res
     
@@ -161,7 +248,7 @@ class PostView(MethodView):
         if post_id:
             post = Post.query.filter_by(id=post_id).first()
             if post:
-                db.session.delete(post)
+                post.status = -1
                 db.session.commit()
             return {}
         raise ParameterError
@@ -173,3 +260,7 @@ bp.add_url_rule('/post/', defaults={'post_id': None},
 bp.add_url_rule('/post/', view_func=user_view, methods=['POST',])
 bp.add_url_rule('/post/<int:post_id>', view_func=user_view,
                  methods=['GET', 'PUT', 'DELETE'])
+
+post_favor_view = PostFavorView.as_view('post_favor')
+bp.add_url_rule('/post/favors/', view_func=post_favor_view, methods=['GET', 'POST'])
+bp.add_url_rule('/post/favors/<int:post_id>', view_func=post_favor_view, methods=['DELETE'])

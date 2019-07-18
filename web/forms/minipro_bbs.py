@@ -8,3 +8,8 @@ class PostForm(Form):
     content = StringField("内容", validators=[DataRequired()])
     author_id = StringField("作者", validators=[DataRequired()])
 
+
+class PostFavorForm(Form):
+    from_user_id = IntegerField('点赞人', validators=[DataRequired()])
+    to_user_id = IntegerField('被点赞人', validators=[DataRequired()])
+    post_id = IntegerField('帖子id', validators=[DataRequired()])
