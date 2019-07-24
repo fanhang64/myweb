@@ -8,8 +8,8 @@ from flask.views import MethodView
 from web.config import Config
 from web.core import db
 from web.models.minipro_bbs import Post, PostImage,\
-     PostTopic, User, PostFavor
-from web.forms.minipro_bbs import PostForm, PostFavorForm
+     PostTopic, User, PostFavor, PostComment
+from web.forms.minipro_bbs import PostForm, PostFavorForm, PostCommentForm
 from web.exceptions import CustomBaseException, FormValidationError, ParameterError
 from web.utils import jwt_
 
@@ -125,6 +125,61 @@ def user_post(uid):
         r['stats'] = stats
         res.append(r)
     return res
+
+
+@bp.route("/post/comments", methods=['POST'])
+def create_comments():
+    data = request.json
+    uid = data.get('uid')
+    post_id = data.get('post_id')
+    content = data.get('content')
+    form = PostCommentForm(data=request.json)
+    if form.validate():
+        post_comment = PostComment(uid=uid, post_id=post_id, content=content)
+        db.session.add(post_comment)
+        db.session.commit()
+        user = User.query.filter_by(id=uid).first()
+        d = post_comment.to_dict()
+        if user:
+            d['author'] = {
+                'nickname': user.nickname,
+                'avatar': user.avatar,
+                'id': uid
+            }
+        d['reply_list'] = []
+        return d
+    raise FormValidationError(form)
+
+
+@bp.route("/post/<int:post_id>/comments", methods=['GET'])
+def comments(post_id):
+    if not post_id:
+        return
+    res = []
+    post_comments = PostComment.query.order_by(PostComment.id.desc()).all()
+    for x in post_comments:
+        user = User.query.filter_by(id=x.uid).first()
+        d = x.to_dict()
+        if user:
+            d['author'] = {
+                'nickname': user.nickname,
+                'avatar': user.avatar,
+                'id': x.uid
+            }
+        
+        d['reply_list'] = []
+        res.append(d)
+    return res
+
+
+@bp.route("/post/comments/<int:comment_id>", methods=['DELETE'])
+def post_comments(comment_id):
+    if not comment_id:
+        raise ParameterError('缺少comment_id参数')
+    query = PostComment.query.filter(PostComment.id==comment_id)
+    query.delete()
+    db.session.commit()
+    return {}
 
 
 class PostFavorView(MethodView):

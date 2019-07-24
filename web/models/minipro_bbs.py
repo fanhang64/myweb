@@ -105,3 +105,20 @@ class PostFavor(db.Model):
             }
             res.append(d)
         return res
+
+
+class PostComment(db.Model):
+    __tablename__  = 'post_comments'
+
+    id = db.Column(db.Integer, primary_key=True)
+    uid = db.Column(db.Integer, nullable=False, comment='用户id')
+    post_id = db.Column(db.Integer, nullable=False)
+    content = db.Column(db.VARCHAR(32), nullable=True)
+    status = db.Column(TINYINT(2), default=0)
+    created_at = db.Column(db.DateTime, default=datetime.now())
+    updated_at = db.Column(db.DateTime, default=datetime.now(), onupdate=datetime.now())
+
+    def to_dict(self):
+        keys = [x.name for x in self.__table__.columns]
+        data = {key: getattr(self, key) for key in keys}
+        return data
