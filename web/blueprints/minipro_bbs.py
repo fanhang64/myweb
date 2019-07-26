@@ -96,21 +96,20 @@ def user_post(uid):
     if favor:
         post_favor = PostFavor.query\
             .filter(PostFavor.from_user_id == uid)\
-            .order_by(PostFavor.id.desc())\
             .with_entities(PostFavor.post_id)
         post_ids = [x[0] for x in post_favor]
-        query = Post.query.filter(Post.id.in_(post_ids))
-        if since_id and since_id > 0:
-            query = query.filter(PostFavor.id < since_id)
+        query = Post.query.filter(Post.id.in_(post_ids))\
+            .order_by(Post.id.desc())
     elif comment:
         res = []
         query = PostComment.query\
             .filter(PostComment.uid == uid)\
             .order_by(PostComment.id.desc())
-        if limit:
-            query = query.limit(limit)
         if since_id and since_id > 0:
             query = query.filter(PostComment.id < since_id)
+        if limit:
+            query = query.limit(limit)
+
         post_comments = query.all()
         for x in post_comments:
             d = {
@@ -134,8 +133,8 @@ def user_post(uid):
         return res
     else:
         query = Post.query.filter(Post.user_id == uid).order_by(Post.id.desc())
-        if since_id and since_id > 0:
-            query = query.filter(Post.id < since_id)
+    if since_id and since_id > 0:
+        query = query.filter(Post.id < since_id)
     if limit:
         query = query.limit(limit)
     posts = query.all()
