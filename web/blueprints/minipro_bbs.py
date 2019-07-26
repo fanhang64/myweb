@@ -92,18 +92,50 @@ def user_post(uid):
     favor = request.args.get('favor')
     comment = request.args.get('comment')
     limit = request.args.get('limit')
-    since_post_id = request.args.get('since_id', type=int)
+    since_id = request.args.get('since_id', type=int)
     if favor:
         post_favor = PostFavor.query\
-            .filter(PostFavor.from_user_id == uid).with_entities(PostFavor.post_id)
+            .filter(PostFavor.from_user_id == uid)\
+            .order_by(PostFavor.id.desc())\
+            .with_entities(PostFavor.post_id)
         post_ids = [x[0] for x in post_favor]
         query = Post.query.filter(Post.id.in_(post_ids))
+        if since_id and since_id > 0:
+            query = query.filter(PostFavor.id < since_id)
     elif comment:
-        pass
+        res = []
+        query = PostComment.query\
+            .filter(PostComment.uid == uid)\
+            .order_by(PostComment.id.desc())
+        if limit:
+            query = query.limit(limit)
+        if since_id and since_id > 0:
+            query = query.filter(PostComment.id < since_id)
+        post_comments = query.all()
+        for x in post_comments:
+            d = {
+                'post_id': x.post_id,
+                'content': x.content,
+            }
+            if x.replied_id:
+                replied = PostComment.query.filter_by(id=x.replied_id).first()
+                d['replier'] = replied.get_author_info()
+                d['subject'] = replied.content
+            else:
+                post = x.post
+                user = User.query.filter(User.id == post.user_id).first()
+                d['replier'] = {
+                    'nickname': user.nickname,
+                    'avatar': user.avatar,
+                    'id': user.id
+                }
+                d['subject'] = post.content
+            res.append(d)
+        return res
     else:
         query = Post.query.filter(Post.user_id == uid).order_by(Post.id.desc())
-    if since_post_id and since_post_id > 0:
-        query = query.filter(Post.id < since_post_id)
+        if since_id and since_id > 0:
+            query = query.filter(Post.id < since_id)
     if limit:
         query = query.limit(limit)
     posts = query.all()
@@ -133,13 +165,21 @@ def create_comments():
     uid = data.get('uid')
     post_id = data.get('post_id')
     content = data.get('content')
+    replied_id = data.get('replied_id')
+    to_uid = data.get('to_uid')
     form = PostCommentForm(data=request.json)
     if form.validate():
-        post_comment = PostComment(uid=uid, post_id=post_id, content=content)
-        db.session.add(post_comment)
+        comment = PostComment(uid=uid, post_id=post_id, content=content)
+        if replied_id:
+            post_comment = PostComment.query.filter_by(id=replied_id).first()
+            if not post_comment:
+                raise CustomBaseException
+            comment.replied = post_comment
+            comment.to_uid = to_uid
+        db.session.add(comment)
         db.session.commit()
         user = User.query.filter_by(id=uid).first()
-        d = post_comment.to_dict()
+        d = comment.to_dict()
         if user:
             d['author'] = {
                 'nickname': user.nickname,
@@ -151,23 +191,37 @@ def create_comments():
     raise FormValidationError(form)
 
 
+def get_comment_info(post_comment):
+    res = {}
+    user = User.query.filter_by(id=post_comment.uid).first()
+    if user:
+        res['author'] = post_comment.get_author_info()
+    d = post_comment.to_dict()
+    res.update(d)
+    replies = post_comment.replies
+    res['reply_list'] = []
+
+    for x in replies:
+        data = x.to_dict()
+        data['author'] = x.get_author_info()
+        to_user = User.query.filter_by(id=x.to_uid).first()
+        if to_user:
+            data['replier'] = {'nickname': to_user.nickname, 'avatar': to_user.avatar}
+        res['reply_list'].append(data)
+    return res
+        
+
 @bp.route("/post/<int:post_id>/comments", methods=['GET'])
 def comments(post_id):
     if not post_id:
         return
     res = []
-    post_comments = PostComment.query.order_by(PostComment.id.desc()).all()
+    post_comments = PostComment.query\
+        .filter(PostComment.post_id == post_id)\
+        .filter(PostComment.replied_id.is_(None))\
+        .order_by(PostComment.id.desc()).all()
     for x in post_comments:
-        user = User.query.filter_by(id=x.uid).first()
-        d = x.to_dict()
-        if user:
-            d['author'] = {
-                'nickname': user.nickname,
-                'avatar': user.avatar,
-                'id': x.uid
-            }
-        
-        d['reply_list'] = []
+        d = get_comment_info(x)
         res.append(d)
     return res
 
@@ -190,7 +244,9 @@ class PostFavorView(MethodView):
             pass
         if user_id:
             post_favor_list = PostFavor.query\
-                .filter_by(from_user_id=user_id).with_entities(PostFavor.post_id)
+                .filter_by(from_user_id=user_id)\
+                .order_by(PostFavor.id.desc())\
+                .with_entities(PostFavor.post_id)
             post_id_list = [x[0] for x in post_favor_list]   
             return post_id_list
         raise ParameterError

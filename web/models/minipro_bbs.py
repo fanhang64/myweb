@@ -48,6 +48,8 @@ class Post(db.Model):
 
     topic_id = db.Column(db.Integer, db.ForeignKey('post_topic.id'))
 
+    comments = db.relationship('PostComment', back_populates='post')
+
     def to_dict(self):
         keys = [x.name for x in self.__table__.columns]
         data = {key: getattr(self, key) for key in keys}
@@ -59,8 +61,9 @@ class Post(db.Model):
     def get_favors_count(self):
         return PostFavor.query.filter_by(post_id=self.id).count()
 
-    def get_comments(self):
-        return 0
+    def get_comments_count(self):
+        return PostComment.query.filter_by(post_id=self.id).count()
+
 
 class PostImage(db.Model):
     __tablename__ = 'post_images'
@@ -110,11 +113,20 @@ class PostFavor(db.Model):
 class PostComment(db.Model):
     __tablename__  = 'post_comments'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)  # a huifu b: 123
     uid = db.Column(db.Integer, nullable=False, comment='用户id')
-    post_id = db.Column(db.Integer, nullable=False)
     content = db.Column(db.VARCHAR(32), nullable=True)
     status = db.Column(TINYINT(2), default=0)
+
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
+    post = db.relationship('Post', back_populates='comments')
+
+    replied = db.relationship('PostComment', back_populates='replies', remote_side=[id])  # 评论
+
+    replied_id = db.Column(db.Integer, db.ForeignKey('post_comments.id'))  # 回复的comment id
+    replies = db.relationship('PostComment', back_populates='replied', cascade='all, delete-orphan')
+
+    to_uid = db.Column(db.Integer, nullable=False, comment='被回复人用户id')
     created_at = db.Column(db.DateTime, default=datetime.now())
     updated_at = db.Column(db.DateTime, default=datetime.now(), onupdate=datetime.now())
 
@@ -122,3 +134,15 @@ class PostComment(db.Model):
         keys = [x.name for x in self.__table__.columns]
         data = {key: getattr(self, key) for key in keys}
         return data
+
+    def get_author_info(self):
+        user = User.query.filter_by(id=self.uid).first()
+        return {
+            'nickname': user.nickname,
+            'avatar': user.avatar,
+            'id': self.id
+        }
+    
+    def get_comment_by_det_uid(self, to_uid):
+        
+
