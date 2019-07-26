@@ -235,6 +235,60 @@ def post_comments(comment_id):
     return {}
 
 
+@bp.route("/messages/<int:msg_id>/read", methods=['PUT'])
+def change_read_status(msg_id):
+    msg_type = request.args.get('msg_type')
+    if msg_type == 'favor':
+        post_favor = PostFavor.query.filter(PostFavor.id == msg_id).first()
+        if not post_favor:
+            return {}
+        post_favor.status = 1  # read
+        db.session.commit()
+        return {}
+    elif msg_type == 'comment':
+        post_comment = PostComment.query.filter(PostComment.id == msg_id).first()
+        if not post_comment:
+            return {}
+        post_comment.status = 1
+        db.session.commit()
+        return {}
+    raise ParameterError
+
+
+@bp.route("/user/<int:uid>/messages")
+def get_message_favor(uid):
+    res = []
+    message_type = request.args.get('q')
+    since_id = request.args.get('since_id', type=int)
+    limit = request.args.get('limit')
+    if not uid:
+        raise CustomBaseException('缺少uid')
+
+    if message_type == 'comment':
+        res = PostComment.get_comments(uid, limit, since_id)
+    elif message_type == 'favor':
+        res = PostFavor.get_favors(uid, limit, since_id)
+    return res
+
+
+@bp.route("/user/<int:uid>/messages/count")
+def message_count(uid):
+    if not uid:
+        raise CustomBaseException('缺少uid')
+
+    favors = PostFavor.query\
+        .filter(PostFavor.to_user_id == uid, PostFavor.status == 0
+    ).count()
+    comments = PostComment.query\
+        .filter(PostComment.to_uid == uid, PostComment.status == 0
+    ).count()
+    res = {
+        'favors': favors,
+        'comments': comments
+    }
+    return res
+
+
 class PostFavorView(MethodView):
     def get(self):
         post_id = request.args.get('post_id')

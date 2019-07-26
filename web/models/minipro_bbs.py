@@ -95,17 +95,30 @@ class PostFavor(db.Model):
         return data
     
     @classmethod
-    def get_favors(self, user_id):
+    def get_favors(cls, user_id, limit=20, since_id=None):
         res = []
-        favors = self.query.filter_by(to_user_id=user_id)
-        for x in favors:
-            post = Post.query.get(pk=x.post_id)
+        query = cls.query.filter_by(to_user_id=user_id)
+        if since_id and since_id > 0:
+            query = query.filter_by(cls.id < since_id)
+        query = query.order_by(cls.id.desc())
+        if limit:
+            query = query.limit(limit)
+        for x in query.all():
+            post = Post.query.get(x.post_id)
             d = {
-                'user_id': x.from_user_id,
-                'user_name': x.from_user_name,
+                'id': x.id,
                 'created_at': x.created_at,
-                'content': post.content
+                'content': post.content,
+                'status': x.status,
+                'post_id': post.id,
             }
+            user = User.query.filter_by(id=x.from_user_id).first()
+            if user:
+                d['author'] = {
+                    'user_id': x.from_user_id,
+                    'user_name': x.from_user_name,
+                    'avatar': user.avatar
+                }
             res.append(d)
         return res
 
@@ -142,7 +155,31 @@ class PostComment(db.Model):
             'avatar': user.avatar,
             'id': self.id
         }
-    
-    def get_comment_by_det_uid(self, to_uid):
-        
 
+    @classmethod
+    def get_comments(cls, user_id, limit=20, since_id=None):
+        res = []
+        query = cls.query.filter_by(to_uid=user_id)
+        if since_id and since_id > 0:
+            query = query.filter_by(cls.id < since_id)
+        query = query.order_by(cls.id.desc())
+        if limit:
+            query = query.limit(limit)
+        for x in query.all():
+            post = x.post
+            d = {
+                'id': x.id,
+                'created_at': x.created_at,
+                'content': post.content,
+                'status': x.status,
+                'post_id': post.id,
+            }
+            user = User.query.filter_by(id=x.uid).first()
+            if user:
+                d['author'] = {
+                    'user_id': user.id,
+                    'user_name': user.nickname,
+                    'avatar': user.avatar
+                }
+            res.append(d)
+        return res
