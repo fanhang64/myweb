@@ -8,7 +8,7 @@ from flask.views import MethodView
 from web.config import Config
 from web.core import db
 from web.models.minipro_bbs import Post, PostImage,\
-     PostTopic, User, PostFavor, PostComment
+     PostTopic, User, PostFavor, PostComment, Report
 from web.forms.minipro_bbs import PostForm, PostFavorForm, PostCommentForm
 from web.exceptions import CustomBaseException, FormValidationError, ParameterError
 from web.utils import jwt_
@@ -17,60 +17,49 @@ from web.utils import jwt_
 bp = Blueprint('minipro', __name__, url_prefix='/minipro')
 
 
-@bp.route("/auth", methods=['POST'])
-def auth():
-    req_data = request.json
-    code = req_data.get('code')
-    if not code:
-        return
-    data = {
-        'appid': Config.AppId,
-        'secret': Config.AppSecret,
-        'js_code': code,
-        'grant_type': 'authorization_code'
-    }
-
-    url = 'https://api.weixin.qq.com/sns/jscode2session?'
-    req_url = url + urlencode(data)
-    try:
-        res = requests.get(req_url).json()
-        print(res)
-        return res
-    except:
-        raise CustomBaseException
-    return {}
+def get_openid(code):
+    base_url = "https://api.weixin.qq.com/sns/jscode2session"
+    url = base_url + f"?appid={Config.AppId}&secret={Config.AppSecret}&js_code={code}&grant_type=authorization_code"
+    r = requests.get(url)
+    openid = r.json()['openid']
+    return openid
 
 
 @bp.route("/wx_login", methods=['POST'])
-def wx_login():
+def login():
     req_data = request.json
-    openid = req_data.get('openid')
-    if not openid:
-        raise ParameterError('缺少参数openid')
-    nickname = req_data.get('nickname')
-    avatar_url = req_data.get('avatar_url')
-    phone = req_data.get('phone')
+    code = req_data.get('code')
+    user_info = req_data.get('userInfo')
+    open_id = get_openid(code)
 
-    user = User.query.filter_by(open_id=openid).first()
+    user = User.query.filter(User.open_id == open_id).first()
     if not user:
         user = User()
-        user.open_id = openid
-        user.phone = phone
-        user.nickname = nickname
-        user.avatar = avatar_url
+        user.nickname = user_info.get('nickName')
+        user.open_id = open_id
+        user.avatar = user_info.get('avatarUrl')
         db.session.add(user)
         try:
             db.session.commit()
         except:
             db.session.rollback()
-            return {'code': -1, 'msg': '生成token失败'}
-    token = jwt_.encode(user.id, openid).decode()
-    return {'token': token, 'user_id': user.id}
+            raise CustomBaseException('生成token失败')
+    token = jwt_.encode(user.id, open_id)
+    res = {
+        'token': token.decode(),
+        'user_info':{
+            'user_id': user.id,
+            'nickName': user.nickname,
+            'avatar': user.avatar,
+            'is_admin': user.is_admin
+        }
+    }
+    return res
 
 
-@bp.route("/users", methods=['GET', 'POST'])
+@bp.route("/users", methods=['GET'])
 def users():
-    pass
+    pass    
 
 
 @bp.route("/post/topic/", methods=['GET'])
@@ -99,6 +88,7 @@ def user_post(uid):
             .with_entities(PostFavor.post_id)
         post_ids = [x[0] for x in post_favor]
         query = Post.query.filter(Post.id.in_(post_ids))\
+            .filter(Post.status == 1)\
             .order_by(Post.id.desc())
     elif comment:
         res = []
@@ -132,7 +122,9 @@ def user_post(uid):
             res.append(d)
         return res
     else:
-        query = Post.query.filter(Post.user_id == uid).order_by(Post.id.desc())
+        query = Post.query.filter(Post.user_id == uid)\
+            .filter(Post.status == 1)\
+            .order_by(Post.id.desc())
     if since_id and since_id > 0:
         query = query.filter(Post.id < since_id)
     if limit:
@@ -289,6 +281,17 @@ def message_count(uid):
     return res
 
 
+@bp.route("/post/<int:post_id>/report", methods=['POST'])
+def report(post_id):
+    if not post_id:
+        raise CustomBaseException('缺少post_id')
+    report = Report()
+    report.post_id = post_id
+    db.session.add(report)
+    db.session.commit()
+    return {}
+
+
 class PostFavorView(MethodView):
     def get(self):
         post_id = request.args.get('post_id')
@@ -340,13 +343,13 @@ class PostView(MethodView):
         topic_id = request.args.get('topic_id')
     
         res = []
-        query = Post.query.order_by(Post.id.desc())
+        query = Post.query.filter(Post.status == 1).order_by(Post.id.desc())
         if post_id:
             query = query.filter_by(id=post_id)
         if filter_args == 'val':
-            query = query.filter_by(status=2)
+            query = query.filter_by(post_type=1)
         elif filter_args == 'top':
-            query = query.filter_by(status=3)
+            query = query.filter_by(post_type=2)
         if topic_id:
             query = query.filter(Post.topic_id == topic_id)
         if since_post_id and since_post_id > 0:
@@ -418,11 +421,11 @@ class PostView(MethodView):
         raise ParameterError
 
 
-user_view = PostView.as_view('post')
+post_view = PostView.as_view('post')
 bp.add_url_rule('/post/', defaults={'post_id': None},
-                 view_func=user_view, methods=['GET',])
-bp.add_url_rule('/post/', view_func=user_view, methods=['POST',])
-bp.add_url_rule('/post/<int:post_id>', view_func=user_view,
+                 view_func=post_view, methods=['GET',])
+bp.add_url_rule('/post/', view_func=post_view, methods=['POST',])
+bp.add_url_rule('/post/<int:post_id>/', view_func=post_view,
                  methods=['GET', 'PUT', 'DELETE'])
 
 post_favor_view = PostFavorView.as_view('post_favor')
