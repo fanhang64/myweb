@@ -45,9 +45,8 @@ class ShareTextView(MethodView):
         share_code.text = req_data.get('content')
         db.session.add(share_code)
         db.session.commit()
-        path = request.url_root
 
-        share_url = path + "share/?code="+code
+        share_url = "http://hapi.5ihouse.cn/share/?code="+code
         return {'data':share_url}
 
 
