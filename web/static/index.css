@@ -38,13 +38,13 @@ textarea:focus {
 }
 
 footer{
-    position: absolute;
-    bottom: 0px;
-    left:45%;
+    margin-top: 100px;
 }
 
 .footer-con{
-    padding-left: 10px;
+    text-align: center;
+    padding-top:50px;
+    padding-bottom: 10px;
 }
 
 .share-url{
