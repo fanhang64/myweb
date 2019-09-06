@@ -35,7 +35,7 @@ class JsonResponse:
             'errmsg': msg,
         }
         if data:
-            self.data['data'] = data
+            self.data['data'] = data['data']
 
     def to_response(self):
         return Response(

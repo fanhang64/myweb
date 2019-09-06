@@ -7,7 +7,7 @@ import sys
 import json
 from logging.handlers import RotatingFileHandler
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from werkzeug.utils import find_modules
 
 from .config import Config
@@ -98,7 +98,13 @@ def register_err_handler(app):
 
     @app.errorhandler(404)
     def handle_404(err):
-        return jsonify(errcode=-2, errmsg='api not found')
+        # return jsonify(errcode=-2, errmsg='api not found')
+        return render_template('404.html')
+
+
+    @app.errorhandler(500)
+    def handle_500(err):
+        return jsonify(errcode=-1, errmsg='server error')
 
 
 def register_extensions(app):
