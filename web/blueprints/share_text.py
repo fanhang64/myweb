@@ -13,11 +13,13 @@ bp = Blueprint('share', __name__)
 class ShareTextView(MethodView):
     def get(self):
         code = request.args.get('code')
+
         if code:
-            path = request.path
+            path = request.url_root
+            print(path)
             share_code = ShareCode.query.filter_by(code=code).first()
             if share_code:
-                share_url = "http://127.0.0.1:5000" +path+ "?code="+code
+                share_url = path + "share/?code="+code
                 return render_template('show_share_text.html', **{'share_url': share_url, 'text': share_code.text})
             else:
                 return render_template('404.html')
@@ -43,7 +45,10 @@ class ShareTextView(MethodView):
         share_code.text = req_data.get('content')
         db.session.add(share_code)
         db.session.commit()
-        return {'data':code}
+        path = request.url_root
+
+        share_url = path + "share/?code="+code
+        return {'data':share_url}
 
 
 share_text_view = ShareTextView.as_view('share_text')

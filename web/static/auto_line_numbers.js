@@ -136,7 +136,7 @@ $(document).ready(function() {
 				console.log(res, "====")
 				var res = res;
 				if (res.errcode == 0){
-					window.location.href = 'http://127.0.0.1:5000/share/?code='+res.data;
+					window.location.href = res.data;
 				}else{
 					alert('创建分享链接失败');
 				}
