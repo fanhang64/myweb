@@ -5,6 +5,7 @@ from web.utils.share_text import gen_share_code
 from web.models.share_text import ShareCode
 from web.exceptions import CustomBaseException
 from web.core import db
+from web.config import Config
 
 
 bp = Blueprint('share', __name__)
@@ -15,11 +16,9 @@ class ShareTextView(MethodView):
         code = request.args.get('code')
 
         if code:
-            path = request.url_root
-            print(path)
             share_code = ShareCode.query.filter_by(code=code).first()
             if share_code:
-                share_url = path + "share/?code="+code
+                share_url = Config.ShareTextUrl + "/share/?code="+code
                 return render_template('show_share_text.html', **{'share_url': share_url, 'text': share_code.text})
             else:
                 return render_template('404.html')
@@ -46,7 +45,7 @@ class ShareTextView(MethodView):
         db.session.add(share_code)
         db.session.commit()
 
-        share_url = "http://hapi.5ihouse.cn/share/?code="+code
+        share_url = Config.ShareTextUrl + "/share/?code="+code
         return {'data':share_url}
 
 

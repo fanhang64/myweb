@@ -15,3 +15,5 @@ class Config:
 
     AppId = 'wx4b5a9beb9ca390ef'
     AppSecret = '233d18b3ad200276f6c38ebe424488fd'
+
+    ShareTextUrl = 'http://hapi.5ihouse.cn'
