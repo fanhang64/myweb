@@ -30,7 +30,7 @@ class ShareTextView(MethodView):
         if not req_data:
             raise CustomBaseException('参数缺失')
 
-        content = req_data.get('text')
+        content = req_data.get('content')
         share_code_list = ShareCode.query\
             .with_entities(ShareCode.code).all()
         share_code_list = [x[0] for x in share_code_list]

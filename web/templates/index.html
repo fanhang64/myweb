@@ -30,9 +30,12 @@
 
     <div class="container">
         <div class="starter-template">
-            <h1>Share Text Template</h1>
+            <h1 style="margin-top: 0px;">Share Text Template</h1>
             <p class="lead">Use this website as a way to quickly share your text.<br></p>
-            <textarea class="form-control share-text" rows="3" spellcheck="false" >print('hello share text')</textarea>
+            <div id="editor">def foo(*args, **kwargs):
+    x = "All this is Share Text";
+    return x;</div>
+
             <div class='share-btn-con'>
                 <button type="button" class="btn btn-default share-btn">获取分享链接</button>
             </div>
@@ -47,16 +50,8 @@
     </footer>
     <script src="https://cdn.bootcss.com/jquery/1.12.4/jquery.min.js"></script>
     <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-    <script src="/static/index.js"></script>
-
-    <script>
-        $(".share-text").setTextareaCount({
-            width: "50px",
-            bgColor: "#EAEAEA",
-            color: "black",
-            display: "inline-block"
-        });
-    </script>
-
+    <script src="/static/src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+    <script src="/static/index.js" type="text/javascript" charset="utf-8"></script>
+    
 </body>
 </html>

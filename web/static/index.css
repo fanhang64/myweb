@@ -10,25 +10,8 @@ body {
     text-align: center;
 }
 
-.share-text{
-    min-height: 330px;
-    max-height: 480px;
-    width: 1100px;
-    background-color: #EAEAEA;
-    border:none;
-    padding: 5px;
-    line-height: 23px;
-    overflow: auto;
-    color: #666;
-    font-size: 16px;
-    font-family: "微软雅黑"
-}
-textarea:focus {
-    box-shadow: 0 0 1px 1px #3e4ef9;
-}
-
-.bold-text{
-    font-weight:bold !important;
+#editor{
+    border: 1px solid #ccc;
 }
 
 .share-btn-con{

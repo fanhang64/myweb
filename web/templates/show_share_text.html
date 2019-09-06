@@ -32,7 +32,8 @@
         <div class="starter-template">
             <h1>Share Text Template</h1>
             <p class="lead">Use this website as a way to quickly share your text.<br></p>
-            <textarea class="form-control share-text" rows="3" spellcheck="false" readonly style='color:gray !important;'>{{ text }}</textarea>
+            <div id="editor">{{ text }}</div>
+    
             <div style="margin-top:10px;">
                 <input type="text" class="form-control share-url" name='share-url' value="{{ share_url }}" readonly>
             </div>
@@ -48,15 +49,16 @@
     </footer>
     <script src="https://cdn.bootcss.com/jquery/1.12.4/jquery.min.js"></script>
     <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-    <script src="/static/index.js"></script>
-
+    <script src="/static/src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+    <!-- <script src="/static/index.js" type="text/javascript" charset="utf-8"></script> -->
     <script>
-        $(".share-text").setTextareaCount({
-            width: "50px",
-            bgColor: "#EAEAEA",
-            color: "black",
-            display: "inline-block"
+        var editor = ace.edit("editor", {
+            maxLines: 40,minLines: 40
         });
+        editor.setTheme("ace/theme/tomorrow");
+        editor.session.setMode("ace/mode/python");
+        editor.setAutoScrollEditorIntoView(true);
+        editor.setReadOnly(true);
     </script>
 </body>
 </html>
