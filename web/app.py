@@ -104,7 +104,7 @@ def register_err_handler(app):
 
     @app.errorhandler(500)
     def handle_500(err):
-        return jsonify(errcode=-1, errmsg='server error')
+        return jsonify(errcode=-1, errmsg=err)
 
 
 def register_extensions(app):
