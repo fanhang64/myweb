@@ -41,10 +41,6 @@
             "padding-right": "10px",
 	    	"width": (this.$element.width() - parseInt(config.width)) + 'px'
 		});
-		this.$element.html(
-			"print('hello share text')\n"
-		)
-
 	}
 
 	AutoRowsNumbers.prototype = {
