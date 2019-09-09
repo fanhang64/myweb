@@ -30,6 +30,9 @@ $(document).ready(function() {
 			},
 			fail: function(res){
 				alert('创建分享链接失败');
+			},
+			error:function (e) {
+				alert('创建分享链接失败');
 			}
 		});
 	}); 

@@ -30,7 +30,11 @@ footer{
     padding-bottom: 10px;
 }
 
-.share-url{
-    width:1040px;
+.share-btn{
+    vertical-align: middle;
 }
-
+.select-language{
+    width: auto;
+    display: inline;
+    vertical-align: middle;
+}
