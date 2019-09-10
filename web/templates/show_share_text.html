@@ -7,6 +7,7 @@
     <title>Share Text</title>
     <link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/index.css">
+    <script src="https://cdn.staticfile.org/clipboard.js/2.0.4/clipboard.min.js"></script>
 </head>
 <body>
     <nav class="navbar navbar-inverse navbar-fixed-top">
@@ -34,8 +35,12 @@
             <p class="lead">Use this website as a way to quickly share your text.<br></p>
             <div id="editor">{{ text }}</div>
     
-            <div style="margin-top:10px;">
-                <input type="text" class="form-control share-url" name='share-url' value="{{ share_url }}" readonly>
+            <div class="share-url-con" style="margin-top:10px;">
+                <input id="share-url" class="form-control share-url" name='share-url' type="text" value="{{ share_url }}" readonly>
+                
+                <button type="button" id="share-copy-btn" class="btn btn-default share-copy-btn" aria-label="Left Align" data-clipboard-target='#share-url'>
+                    <span class="glyphicon glyphicon-copy" aria-hidden="true"></span>
+                </button>
             </div>
         </div>
         </div>
@@ -59,6 +64,8 @@
         editor.session.setMode("ace/mode/python");
         editor.setAutoScrollEditorIntoView(true);
         editor.setReadOnly(true);
+
+        var clipboard = new ClipboardJS('.share-copy-btn');
     </script>
 </body>
 </html>

@@ -30,9 +30,20 @@ footer{
     padding-bottom: 10px;
 }
 
+.share-url-con{
+    position: relative;    
+}
+
+.share-copy-btn{
+    position: absolute;
+    right: 0;
+    top:0;
+}
+
 .share-btn{
     vertical-align: middle;
 }
+
 .select-language{
     width: auto;
     display: inline;
